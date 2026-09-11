@@ -14,19 +14,11 @@
  * limitations under the License.
  */
 
-resource "google_vertex_ai_semantic_governance_policy_engine" "policy_engine" {
-  region          = var.region
-  project         = var.project_id
-  deletion_policy = var.deletion_policy
-
-  dynamic "gateway_configs" {
-    for_each = var.gateway_configs
-    content {
-      name             = gateway_configs.key
-      network          = gateway_configs.value.network
-      subnetwork       = gateway_configs.value.subnetwork
-      dns_zone_name    = gateway_configs.value.dns_zone_name
-      allowed_projects = gateway_configs.value.allowed_projects
-    }
-  }
+# The module exposes only the whole-resource policy_engine output. Per-gateway
+# computed values (dns_record, ip_address, psc_endpoint, state) live inside its
+# gateway_configs set, which can't be indexed by name -- re-key it into a map to
+# look one up. This output shows the pattern for dns_record.
+output "gateway_dns_records" {
+  value       = { for g in module.semantic_governance_policy_engine.policy_engine.gateway_configs : g.name => g.dns_record }
+  description = "Map of gateway name to the DNS A-record the engine published for it."
 }
